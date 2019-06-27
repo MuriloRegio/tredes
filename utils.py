@@ -1,7 +1,8 @@
 import optionsProcessor
+import codecs
 
 unbytefy = lambda x : x.encode('hex')
-bytefy   = lambda x : "\\x{}".format(x).decode('unicode_escape')
+bytefy	 = lambda x : codecs.decode(x,'hex_codec')
 toBytes  = lambda x : ''.join([bytefy(x[i:i+2]) if x[i:i+2] != '{}' 
 							else '{}' for i in range(0,len(x),2)])
 
@@ -11,7 +12,9 @@ data_payload = 2048
 DHCP_SERVER_PORT = 67
 cookie = '63825363'
 
-padding = '0'*192
+padsize = 192*8
+padding = '0'*padsize
+size	= 4*8
 
 def write(mType):
 	fields = []
@@ -25,12 +28,13 @@ def write(mType):
 	fields.append('0'*8) # CIADDR
 	fields.append('{}') # YIADDR
 	fields.append(optionsProcessor.SERVER_HEX) # SIADDR
+	print fields[-1]
 	fields.append('0'*8) # GIADDR
 	fields.append('{}') # CHADDR
-	fields.append(cookie) # MAGIC COOKIE
+	# fields.append(cookie) # MAGIC COOKIE
 	fields.append(optionsProcessor.write(mType)) # OPTIONS
 	message = ''.join(fields)+'ff'
-	print message
+	print message, len(message)
 	asbytes = toBytes(message)
 	return asbytes
 
@@ -40,14 +44,18 @@ TEMPLATE_ACK   = write(optionsProcessor.DHCP_ACK)
 def fill(mType, XID, YIADDR, CHADDR):
 	xid   = toBytes(XID)
 	yaddr = toBytes(YIADDR)
+	print yaddr
 	addr  = toBytes(pad(CHADDR))
+	print len(pad(CHADDR)), padsize+size
+
+	print (lambda x:[(bytefy(x[i:i+2]),x[i:i+2]) for i in range(0,len(x),2)])(XID)
+
 
 	if mType == 'offer':
 		return TEMPLATE_OFFER.format(xid,yaddr,addr)
 	return TEMPLATE_ACK.format(xid,yaddr,addr)
 
 def pad(chaddr):
-	size = 2*4*4
 	return chaddr + '0'*(size-len(chaddr)) + padding
 
 def clear_stuffing(byteStr):
