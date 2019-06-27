@@ -14,5 +14,5 @@ sock.bind(('',67))
 # Bind the socket to the port
 server_address = (host, DHCP_SERVER_PORT)
 print ("Starting up echo server on %s port %s" % server_address)
-
-sock.sendto(fill('offer', '3903F326', SERVER_HEX, SERVER_HEX), ('192.168.0.10',68))
+print server_address,info.myInfo()[0]
+sock.sendto(fill('ack', '3903F326', SERVER_HEX, SERVER_HEX), ('192.168.0.10',68))
