@@ -3,13 +3,17 @@ import info
 toInt     = lambda x : int(x,16)
 toAddr    = lambda x : '.'.join([str(toInt(x[i:i+2])) for i in range(0,len(x),2)])
 addrToHex = lambda a : ''.join([
-		k if len(k) == 2 else '0'+k
-		[hex(int(x)) for x in a.split('.')]
+		k if len(k) == 2 else '0'+k for k in 
+		[hex(int(x))[2:] for x in a.split('.')]
 	])
 
 
-mask   = info.myInfo(True)
-server = info.myInfo()[-1]
+mask	= '1'*int(info.myInfo(True)[-1])
+mask	= mask + ('0'*(32-len(mask)))
+mask	= '.'.join([str(int(mask[i:i+8],2)) for i in range(0,len(mask),8)])
+server	= info.myInfo()[-1]
+
+DNS_SERVERS = [server]
 
 MASK_HEX   = addrToHex(mask)
 SERVER_HEX = addrToHex(server)
@@ -58,4 +62,4 @@ def write(mType):
 		for nmbr in srvr.split('.'):
 			d+= hex(int(nmbr))
 
-	return ''.join([t,m,r,l,s,d])
+	return ''.join([t,m,r,l,s,d]).replace('x','')
