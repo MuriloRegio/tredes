@@ -1,7 +1,8 @@
 import socket
 import info
 from utils import *
-from optionsProcessor import SERVER_HEX
+from optionsProcessor import SERVER_HEX, addrToHex
+import argparse
 
 def getFields(packet):
 	# packet = [unbytefy(b) for b in packet]
@@ -10,6 +11,15 @@ def getFields(packet):
 		tmp = packet[strt:strt+nbytes]
 		tmp = [unbytefy(b) for b in tmp]
 		return get(tmp,nbytes)
+
+	def pickOpt(packet, strt):
+		tmp = []
+		for b in packet[strt:]:
+			tmp.append(unbytefy(b))
+			if b == '\xff':
+				break
+		return tmp
+
 	# assert all([len(x)==2 for x in packet])
 
 	fields = {}
@@ -27,16 +37,13 @@ def getFields(packet):
 	# fields['chaddr'] = clear_stuffing(get(packet, 4*4+192))
 	# fields['cookie'] = get(packet, 4)
 	# fields['opts']   = getOpts(packet) # opts[0] -> Discover, Offer, Request, Ack, Nak
-	opts = 4*4+192 + 28 + 4
-	pack_opts = pick(packet,opts,len(packet))
 
 	fields['xid']    = pick(packet, 4, 4)
 	fields['siaddr'] = pick(packet,20, 4)
 	fields['chaddr'] = pick(packet,28, 4*4)
-	fields['opts']   = getOpts(packet, focus = '50')
 	return fields
 
-def echo_server(port):
+def echo_server(port,address):
 	import json
 	""" A simple echo server """
 	# Create a UDP socket
@@ -52,23 +59,28 @@ def echo_server(port):
 	# print ("Starting up echo server on %s port %s" % server_address)
 
 	sock.bind(server_address)
+	print address
+	haddress = addrToHex(address)
 
 	while True:
-		data, address = sock.recvfrom(data_payload)
-		print ("received %s bytes from %s" % (len(data), address))
+		data, _ = sock.recvfrom(data_payload)
+		print ("received %s bytes from %s" % (len(data), '255.255.255.255'))
 	
 		if data:
 			fields = getFields(data)
 
 			response = 'ack'
+			target	 = address
 			if fields['siaddr'] == '00000000':
 				response = 'offer'
+				target	 = '255.255.255.255'
 			
-			sock.sendto(fill(response, fields['xid'], fields['opts'], fields['chaddr']), (toAddr(fields['opts']),68))
+			sock.sendto(fill(response, fields['xid'], haddress, fields['chaddr']), (target,68))
+			print 'sent', response
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Socket Server Example')
-	# parser.add_argument('--port', action="store", dest="port", type=int, required=True)
-	given_args = parser.parse_args() 
+	parser.add_argument('--address', action="store", dest="address", type=str, required=False, default='10.32.143.244')
+	args = parser.parse_args() 
 	# port = given_args.port
-	echo_server(DHCP_SERVER_PORT)
+	echo_server(DHCP_SERVER_PORT, args.address)

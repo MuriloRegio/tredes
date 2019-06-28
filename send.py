@@ -15,4 +15,10 @@ sock.bind(('',67))
 server_address = (host, DHCP_SERVER_PORT)
 print ("Starting up echo server on %s port %s" % server_address)
 print server_address,info.myInfo()[0]
-sock.sendto(fill('ack', '3903F326', SERVER_HEX, SERVER_HEX), ('192.168.0.10',68))
+
+import time
+
+t = time.time()
+sock.sendto(fill('ack', '3903F326', SERVER_HEX, SERVER_HEX), (info.myInfo()[-1],68))
+n = time.time()
+print (n - t) * 1000

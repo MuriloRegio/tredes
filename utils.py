@@ -41,8 +41,11 @@ TEMPLATE_OFFER = write(optionsProcessor.DHCP_OFFER)
 TEMPLATE_ACK   = write(optionsProcessor.DHCP_ACK)
 
 def fill(mType, XID, YIADDR, CHADDR):
+	print XID
 	xid   = toBytes(XID)
+	print YIADDR
 	yaddr = toBytes(YIADDR)
+	print CHADDR
 	addr  = toBytes(pad(CHADDR))
 	print len(pad(CHADDR)), padsize+size
 
@@ -62,12 +65,15 @@ def clear_stuffing(byteStr):
 
 def getOpts(packet, focus = None):
 	values = []
+	print packet
 	while packet[0] != 'ff':
 		values.append(getVariable(packet))
 
 		if values[-1][0]==focus:
 			return values[-1][1]
 			
+	if focus is not None:
+		return None
 	return values
 
 def get(byteList, nbytes, vis=False):
