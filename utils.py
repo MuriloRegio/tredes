@@ -12,7 +12,7 @@ data_payload = 2048
 DHCP_SERVER_PORT = 67
 cookie = '63825363'
 
-padsize = 192*4
+padsize = 192*2
 padding = '0'*padsize
 size	= 4*8
 
@@ -31,7 +31,7 @@ def write(mType):
 	fields.append('0'*8) # GIADDR
 	fields.append('{}') # CHADDR
 	fields.append(padding) # CHADDR
-	# fields.append(cookie) # MAGIC COOKIE
+	fields.append(cookie) # MAGIC COOKIE
 	fields.append(optionsProcessor.write(mType)) # OPTIONS
 	message = ''.join(fields)+'ff'
 	asbytes = toBytes(message)

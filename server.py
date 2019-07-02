@@ -1,7 +1,7 @@
 import socket
 import info
 from utils import *
-from optionsProcessor import SERVER_HEX, addrToHex
+from optionsProcessor import SERVER_HEX, addrToHex, DHCP_DISCOVER, DHCP_REQUEST
 import argparse
 
 def getFields(packet):
@@ -37,10 +37,12 @@ def getFields(packet):
 	# fields['chaddr'] = clear_stuffing(get(packet, 4*4+192))
 	# fields['cookie'] = get(packet, 4)
 	# fields['opts']   = getOpts(packet) # opts[0] -> Discover, Offer, Request, Ack, Nak
+	opts = pickOpt(packet, 28+16+192+4)
 
 	fields['xid']    = pick(packet, 4, 4)
-	fields['siaddr'] = pick(packet,20, 4)
+	# fields['siaddr'] = pick(packet,20, 4)
 	fields['chaddr'] = pick(packet,28, 4*4)
+	fields['opts']	 = int(getOpts(opts, focus=53),16)
 	return fields
 
 def echo_server(port,address):
@@ -70,10 +72,10 @@ def echo_server(port,address):
 			fields = getFields(data)
 
 			response = 'ack'
-			target	 = address
-			if fields['siaddr'] == '00000000':
+			# target	 = address
+			target	 = '255.255.255.255'
+			if fields['opts'] == DHCP_DISCOVER:
 				response = 'offer'
-				target	 = '255.255.255.255'
 			
 			sock.sendto(fill(response, fields['xid'], haddress, fields['chaddr']), (target,68))
 			print 'sent', response
