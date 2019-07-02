@@ -61,12 +61,12 @@ def echo_server(port,address):
 	# print ("Starting up echo server on %s port %s" % server_address)
 
 	sock.bind(server_address)
-	print address
+	# print address
 	haddress = addrToHex(address)
 
 	while True:
 		data, _ = sock.recvfrom(data_payload)
-		print ("received %s bytes from %s" % (len(data), '255.255.255.255'))
+		# print ("received %s bytes from %s" % (len(data), '255.255.255.255'))
 	
 		if data:
 			fields = getFields(data)

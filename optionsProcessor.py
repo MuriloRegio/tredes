@@ -59,5 +59,5 @@ def write(mType):
 	for srvr in DNS_SERVERS:
 		d += addrToHex(srvr)
 
-	print len(''.join([t,m,r,l,s,d]))
+	# print len(''.join([t,m,r,l,s,d]))
 	return ''.join([t,m,r,l,s,d]).replace('0x','')
