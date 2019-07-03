@@ -52,22 +52,22 @@ def echo_server(port):
 			if data:
 				fields = getFields(data)
 
-				comp 	 = ''
+				comp = lambda : ''
 				
 				if fields['opts'] == DHCP_DISCOVER:
 					response = 'offer'
 				
 				elif fields['opts'] == DHCP_REQUEST:
 					response = 'ack'
-					comp	 = 'to {}'.format(toAddr(manager.last))
+					comp	 = lambda : 'to {}'.format(toAddr(manager.last))
 				
 				else:
 					continue
 				
 				sock.sendto(fill(response, fields['xid'], fields['chaddr']), ('255.255.255.255',68))
-				print 'sent', response, comp
+				print 'sent', response, comp()
 	except KeyboardInterrupt:
-		print 'Shutting down...'
+		print '\rShutting down...'
 #================================================
 
 
