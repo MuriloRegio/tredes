@@ -1,4 +1,5 @@
 import socket
+import struct
 import info
 from utils import *
 from optionsProcessor import DHCP_DISCOVER, DHCP_REQUEST, toAddr
@@ -36,7 +37,8 @@ def getFields(packet):
 #================================================
 # Instantiates a UDP socket and initiates the server
 def echo_server(port):
-	sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	# sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	sock = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_UDP)
 	sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 	sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 	# 25 here corresponds to SO_BINDTODEVICE, which is not exposed by Python (presumably for portability reasons).
@@ -49,8 +51,10 @@ def echo_server(port):
 		while True:
 			data, _ = sock.recvfrom(data_payload)
 
-			if data:
-				fields = getFields(data)
+			srcport = toInt(unbytefy(data[20:22]))
+
+			if data and srcport == DHCP_CLIENT_PORT:
+				fields = getFields(data[DHCP_DATA_INDEX:])
 
 				comp = lambda : ''
 				
@@ -64,7 +68,10 @@ def echo_server(port):
 				else:
 					continue
 				
-				sock.sendto(fill(response, fields['xid'], fields['chaddr']), ('255.255.255.255',68))
+				# sock.sendto(fill(response, fields['xid'], fields['chaddr']), ('255.255.255.255',DHCP_CLIENT_PORT))
+				data = fill(response, fields['xid'], fields['chaddr'])
+				udp_header = struct.pack('!HHHH', DHCP_SERVER_PORT, DHCP_CLIENT_PORT, 8+len(data), 0)
+				sock.sendto(udp_header+data, ('255.255.255.255',DHCP_CLIENT_PORT))
 				print 'sent', response, comp()
 	except KeyboardInterrupt:
 		print '\rShutting down...'

@@ -14,9 +14,11 @@ toBytes  = lambda x : ''.join([bytefy(x[i:i+2]) if x[i:i+2] != '{}'
 
 #================================================
 # Packet Constants
-host = '255.255.255.255'
-data_payload = 2048
+host 			 = '255.255.255.255'
+data_payload 	 = 2048
 DHCP_SERVER_PORT = 67
+DHCP_CLIENT_PORT = 68
+DHCP_DATA_INDEX  = 28
 cookie = '63825363'
 
 padsize = 192*2
